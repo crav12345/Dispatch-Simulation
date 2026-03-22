@@ -3,29 +3,25 @@ using UnityEngine;
 public class Simulation : MonoBehaviour, IExecutionMode
 {
     private System.Random _rng;
+    private Graph _graph = new();
 
     public void Load(int citySeed, int simulationSeed)
     {
-        var graph = GraphGenerator.Generate
-        (
-            width: 10,
-            height: 10,
-            spacing: 5f,
-            jitter: 0.0f,
-            extraEdgeChance: 0.15f,
-            seed: citySeed
-        );
-        GraphGenerator.Build(graph);
-
         _rng = new(simulationSeed);
+
+        _graph.Generate(new Graph.Config()
+        {
+            seed = citySeed,
+            width = 10,
+            height = 50,
+            spacing = 10f,
+            extraEdgeChance = 0.2f
+        });
+        _graph.Build(0.1f);
     }
 
     private void FixedUpdate()
     {
-        var incidentRoll = _rng.Next(1000);
-        if (incidentRoll > 998)
-        {
-            Debug.Log($"Spawn Incident at {Time.time}");
-        }
+        // TODO: Simulation logic.
     }
 }
