@@ -14,7 +14,7 @@ public class City
     public List<Intersection> Intersections = new();
     public List<Road> Roads = new();
 
-    public static City GenerateConnected(int seed, int intersectionCount = 16, int extraConnections = 8)
+    public static City Generate(int seed, int intersectionCount = 16, int extraConnections = 8)
     {
         var city = new City();
 

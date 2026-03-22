@@ -7,10 +7,6 @@ public class Intersection
     public Vector2 Position;
     public List<Road> ConnectedRoads = new();
 
-    public Intersection()
-    {
-    }
-
     public Intersection(int id, Vector2 position)
     {
         ID = id;

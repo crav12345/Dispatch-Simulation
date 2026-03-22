@@ -4,10 +4,6 @@ public class Road
     public int ToID;
     public float Length;
 
-    public Road()
-    {
-    }
-
     public Road(int fromID, int toID, float length)
     {
         FromID = fromID;
