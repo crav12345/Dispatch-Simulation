@@ -19,7 +19,7 @@ public class Simulation : MonoBehaviour, IExecutionMode
         }
 
         _city = City.Generate(citySeed);
-        _cityRoot = CitySceneBuilder.Build(_city, transform);
+        _cityRoot = City.Build(_city, transform);
 
         _simulatedSystems.Add(new IncidentScheduler());
     }
