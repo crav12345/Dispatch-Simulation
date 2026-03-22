@@ -11,9 +11,15 @@ public class Simulation : MonoBehaviour, IExecutionMode
     public void Load(int citySeed, int simulationSeed)
     {
         _rng = new(simulationSeed);
+        _simulatedSystems.Clear();
+
+        if (_cityRoot != null)
+        {
+            Destroy(_cityRoot);
+        }
 
         _city = City.Generate(citySeed);
-        _cityRoot = _city.BuildScene(transform);
+        _cityRoot = CitySceneBuilder.Build(_city, transform);
 
         _simulatedSystems.Add(new IncidentScheduler());
     }

@@ -3,13 +3,18 @@ using UnityEngine;
 
 public class Intersection
 {
-    public int ID;
-    public Vector2 Position;
-    public List<Road> ConnectedRoads = new();
+    public readonly Vector2 Position;
+    private readonly List<Road> _connectedRoads = new();
 
-    public Intersection(int id, Vector2 position)
+    public IReadOnlyList<Road> ConnectedRoads => _connectedRoads;
+
+    public Intersection(Vector2 position)
     {
-        ID = id;
         Position = position;
+    }
+
+    public void AddConnectedRoad(Road road)
+    {
+        _connectedRoads.Add(road);
     }
 }

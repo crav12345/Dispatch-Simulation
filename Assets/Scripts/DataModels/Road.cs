@@ -1,13 +1,13 @@
 public class Road
 {
-    public int FromID;
-    public int ToID;
-    public float Length;
+    public readonly int FromIdx;
+    public readonly int ToIdx;
+    public readonly float Length;
 
-    public Road(int fromID, int toID, float length)
+    public Road(int fromIdx, int toIdx, float length)
     {
-        FromID = fromID;
-        ToID = toID;
+        FromIdx = fromIdx;
+        ToIdx = toIdx;
         Length = length;
     }
 }

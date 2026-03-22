@@ -6,13 +6,12 @@ public class City
     private const float DefaultBlockLength = 6f;
     private const float BlockLengthVariance = 6f;
     private const float MinimumBlockLength = 2f;
-    private const float DefaultRoadWidth = 0.25f;
-    private const float DefaultIntersectionScale = 0.9f;
-    private const float DefaultRoadDepth = 0.05f;
-    private const float DefaultIntersectionDepth = 0.35f;
 
-    public List<Intersection> Intersections = new();
-    public List<Road> Roads = new();
+    private readonly List<Intersection> _intersections = new();
+    private readonly List<Road> _roads = new();
+
+    public IReadOnlyList<Intersection> Intersections => _intersections;
+    public IReadOnlyList<Road> Roads => _roads;
 
     public static City Generate(int seed, int intersectionCount = 16, int extraConnections = 8)
     {
@@ -43,14 +42,11 @@ public class City
 
             var column = slotID % columns;
             var row = slotID / columns;
-            var intersectionID = city.Intersections.Count;
             var position = new Vector2(xPositions[column], yPositions[row]);
+            city.AddIntersection(position);
 
-            slotToIntersectionID.Add(slotID, intersectionID);
-            city.Intersections.Add(new Intersection(intersectionID, position));
+            slotToIntersectionID.Add(slotID, city.Intersections.Count - 1);
         }
-
-        var connectionKeys = new HashSet<long>();
 
         for (var slotID = 0; slotID < occupiedSlots.Count; slotID++)
         {
@@ -67,84 +63,16 @@ public class City
 
             if (rightNeighborID >= 0)
             {
-                city.AddBidirectionalRoad(fromID, slotToIntersectionID[rightNeighborID], connectionKeys);
+                city.AddBidirectionalRoad(fromID, slotToIntersectionID[rightNeighborID]);
             }
 
             if (downNeighborID >= 0)
             {
-                city.AddBidirectionalRoad(fromID, slotToIntersectionID[downNeighborID], connectionKeys);
+                city.AddBidirectionalRoad(fromID, slotToIntersectionID[downNeighborID]);
             }
         }
 
         return city;
-    }
-
-    public GameObject BuildScene(Transform parent = null)
-    {
-        var root = new GameObject("City");
-
-        if (parent != null)
-        {
-            root.transform.SetParent(parent, false);
-        }
-
-        var roadsRoot = new GameObject("Roads");
-        roadsRoot.transform.SetParent(root.transform, false);
-
-        var intersectionsRoot = new GameObject("Intersections");
-        intersectionsRoot.transform.SetParent(root.transform, false);
-
-        var renderedRoads = new HashSet<long>();
-        var roadMaterial = CreateRoadMaterial();
-
-        foreach (var road in Roads)
-        {
-            var key = GetConnectionKey(road.FromID, road.ToID);
-
-            if (!renderedRoads.Add(key))
-            {
-                continue;
-            }
-
-            var from = GetIntersection(road.FromID);
-            var to = GetIntersection(road.ToID);
-            CreateRoadObject(roadsRoot.transform, roadMaterial, from.Position, to.Position);
-        }
-
-        foreach (var intersection in Intersections)
-        {
-            CreateIntersectionObject(intersectionsRoot.transform, intersection);
-        }
-
-        return root;
-    }
-
-    public Intersection GetIntersection(int id)
-    {
-        return Intersections[id];
-    }
-
-    private bool AddBidirectionalRoad(int fromID, int toID, HashSet<long> connectionKeys)
-    {
-        var key = GetConnectionKey(fromID, toID);
-
-        if (!connectionKeys.Add(key))
-        {
-            return false;
-        }
-
-        var from = GetIntersection(fromID);
-        var to = GetIntersection(toID);
-        var length = Vector2.Distance(from.Position, to.Position);
-
-        var outbound = new Road(fromID, toID, length);
-        var inbound = new Road(toID, fromID, length);
-
-        Roads.Add(outbound);
-        Roads.Add(inbound);
-        from.ConnectedRoads.Add(outbound);
-        to.ConnectedRoads.Add(inbound);
-        return true;
     }
 
     private static List<float> BuildAxisSpacings(int count, System.Random rng)
@@ -158,6 +86,27 @@ public class City
         }
 
         return spacings;
+    }
+
+    private static List<float> BuildAxisPositions(List<float> spacings)
+    {
+        var positions = new List<float>(spacings.Count + 1) { 0f };
+        var accumulated = 0f;
+
+        foreach (var spacing in spacings)
+        {
+            accumulated += spacing;
+            positions.Add(accumulated);
+        }
+
+        var offset = accumulated * 0.5f;
+
+        for (var i = 0; i < positions.Count; i++)
+        {
+            positions[i] -= offset;
+        }
+
+        return positions;
     }
 
     private static List<bool> BuildConnectedOccupiedSlots(System.Random rng, int columns, int rows, int intersectionCount)
@@ -284,77 +233,49 @@ public class City
         return -1;
     }
 
-    private static List<float> BuildAxisPositions(List<float> spacings)
+    public Intersection AddIntersection(Vector2 position)
     {
-        var positions = new List<float>(spacings.Count + 1) { 0f };
-        var accumulated = 0f;
+        var intersection = new Intersection(position);
+        _intersections.Add(intersection);
+        return intersection;
+    }
 
-        foreach (var spacing in spacings)
+    private bool AddBidirectionalRoad(int fromID, int toID)
+    {
+        if (fromID == toID)
         {
-            accumulated += spacing;
-            positions.Add(accumulated);
+            return false;
         }
 
-        var offset = accumulated * 0.5f;
-
-        for (var i = 0; i < positions.Count; i++)
+        if (HasRoadBetween(fromID, toID))
         {
-            positions[i] -= offset;
+            return false;
         }
 
-        return positions;
+        var from = _intersections[fromID];
+        var to = _intersections[toID];
+        var length = Vector2.Distance(from.Position, to.Position);
+
+        var outbound = new Road(fromID, toID, length);
+        var inbound = new Road(toID, fromID, length);
+
+        _roads.Add(outbound);
+        _roads.Add(inbound);
+        from.AddConnectedRoad(outbound);
+        to.AddConnectedRoad(inbound);
+        return true;
     }
 
-    private static long GetConnectionKey(int firstID, int secondID)
+    private bool HasRoadBetween(int fromID, int toID)
     {
-        var min = Mathf.Min(firstID, secondID);
-        var max = Mathf.Max(firstID, secondID);
-        return ((long)min << 32) | (uint)max;
-    }
+        foreach (var road in _roads)
+        {
+            if (road.FromIdx == fromID && road.ToIdx == toID)
+            {
+                return true;
+            }
+        }
 
-    private static Material CreateRoadMaterial()
-    {
-        var shader = Shader.Find("Sprites/Default") ?? Shader.Find("Standard");
-        var material = new Material(shader);
-        material.color = new Color(0.12f, 0.12f, 0.12f);
-        return material;
-    }
-
-    private static void CreateRoadObject(Transform parent, Material material, Vector2 from, Vector2 to)
-    {
-        var roadObject = new GameObject($"Road_{from}_{to}");
-        roadObject.transform.SetParent(parent, false);
-
-        var lineRenderer = roadObject.AddComponent<LineRenderer>();
-        lineRenderer.material = material;
-        lineRenderer.useWorldSpace = false;
-        lineRenderer.positionCount = 2;
-        lineRenderer.startWidth = DefaultRoadWidth;
-        lineRenderer.endWidth = DefaultRoadWidth;
-        lineRenderer.numCapVertices = 6;
-        lineRenderer.SetPosition(0, ToRoadWorldPosition(from));
-        lineRenderer.SetPosition(1, ToRoadWorldPosition(to));
-    }
-
-    private static void CreateIntersectionObject(Transform parent, Intersection intersection)
-    {
-        var intersectionObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        intersectionObject.name = $"Intersection_{intersection.ID}";
-        intersectionObject.transform.SetParent(parent, false);
-        intersectionObject.transform.localPosition = ToWorldPosition(intersection.Position);
-        intersectionObject.transform.localScale = Vector3.one * DefaultIntersectionScale;
-
-        var renderer = intersectionObject.GetComponent<Renderer>();
-        renderer.material.color = new Color(0.82f, 0.22f, 0.2f);
-    }
-
-    private static Vector3 ToWorldPosition(Vector2 point)
-    {
-        return new Vector3(point.x, point.y, DefaultIntersectionDepth);
-    }
-
-    private static Vector3 ToRoadWorldPosition(Vector2 point)
-    {
-        return new Vector3(point.x, point.y, DefaultRoadDepth);
+        return false;
     }
 }
