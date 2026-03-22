@@ -8,8 +8,8 @@ public class City
     private const float MinimumBlockLength = 2f;
     private const float DefaultRoadWidth = 0.25f;
     private const float DefaultIntersectionScale = 0.9f;
-    private const float DefaultRoadHeight = 0.05f;
-    private const float DefaultIntersectionHeight = 0.35f;
+    private const float DefaultRoadDepth = 0.05f;
+    private const float DefaultIntersectionDepth = 0.35f;
 
     public List<Intersection> Intersections = new();
     public List<Road> Roads = new();
@@ -350,11 +350,11 @@ public class City
 
     private static Vector3 ToWorldPosition(Vector2 point)
     {
-        return new Vector3(point.x, DefaultIntersectionHeight, point.y);
+        return new Vector3(point.x, point.y, DefaultIntersectionDepth);
     }
 
     private static Vector3 ToRoadWorldPosition(Vector2 point)
     {
-        return new Vector3(point.x, DefaultRoadHeight, point.y);
+        return new Vector3(point.x, point.y, DefaultRoadDepth);
     }
 }
