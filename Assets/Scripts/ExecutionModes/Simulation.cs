@@ -1,27 +1,22 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Simulation : MonoBehaviour, IExecutionMode
 {
     private System.Random _rng;
-    private Graph _graph = new();
+    private readonly List<ISimulatedSystem> _simulatedSystems = new();
 
     public void Load(int citySeed, int simulationSeed)
     {
         _rng = new(simulationSeed);
-
-        _graph.Generate(new Graph.Config()
-        {
-            seed = citySeed,
-            width = 10,
-            height = 50,
-            spacing = 10f,
-            extraEdgeChance = 0.2f
-        });
-        _graph.Build(0.1f);
+        _simulatedSystems.Add(new IncidentScheduler());
     }
 
     private void FixedUpdate()
     {
-        // TODO: Simulation logic.
+        foreach (var system in _simulatedSystems)
+        {
+            system.Tick(_rng);
+        }
     }
 }
