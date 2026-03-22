@@ -9,14 +9,16 @@ public class Bootstrapper : MonoBehaviour
 {
     [SerializeField] private ProgramRunner _runner;
 
-    public void Bootstrap()
+    public void Bootstrap(AppConfig appConfig)
     {
-        StartCoroutine(BootstrapCoroutine());
+        StartCoroutine(BootstrapCoroutine(appConfig));
     }
 
-    public IEnumerator BootstrapCoroutine()
+    public IEnumerator BootstrapCoroutine(AppConfig appConfig)
     {
-        yield return _runner.LoadProgram();
+        var citySeed = appConfig.CitySeed;
+        var simulationSeed = appConfig.SimulationSeed;
+        yield return _runner.LoadProgram(citySeed, simulationSeed);
         // yield return Services.Mount();
         yield return _runner.RunProgram();
     }

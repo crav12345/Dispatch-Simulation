@@ -6,6 +6,8 @@ using UnityEngine;
 /// </summary>
 public class App : MonoBehaviour
 {
+    [SerializeField] private AppConfig _appConfig;
+
     private void Start()
     {
         DontDestroyOnLoad(this);
@@ -14,6 +16,6 @@ public class App : MonoBehaviour
         Application.targetFrameRate = 60;
 
         var bootstrapper = GetComponentInChildren<Bootstrapper>();
-        bootstrapper.Bootstrap();
+        bootstrapper.Bootstrap(_appConfig);
     }
 }
