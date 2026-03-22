@@ -332,9 +332,17 @@ public class City
 
     private static Material CreateRoadMaterial()
     {
-        var shader = Shader.Find("Sprites/Default") ?? Shader.Find("Standard");
-        var material = new Material(shader);
-        material.color = new Color(0.12f, 0.12f, 0.12f);
+        var shader = Shader.Find("Sprites/Default");
+
+        if (shader == null)
+        {
+            shader = Shader.Find("Standard");
+        }
+
+        var material = new Material(shader)
+        {
+            color = new Color(0.12f, 0.12f, 0.12f)
+        };
         return material;
     }
 
